@@ -10,6 +10,6 @@ fn main() -> Result<()> {
     let file = fs::read_to_string("test_file.sh")?;
     let tokens = parse(file)?;
 
-    println!("{tokens:?}");
+    println!("{tokens:#?}");
     Ok(())
 }

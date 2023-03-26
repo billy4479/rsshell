@@ -20,7 +20,7 @@ pub enum QuoteType {
 #[derive(Debug)]
 pub enum Token {
     Word(String),
-    NewLine,
+    NewLine(u32),
     Parenthesis(char),
     Quote(QuoteType),
     DollarSign,
@@ -30,6 +30,9 @@ pub enum Token {
     Semicolon,
     Greater,
     Less,
+    Whitespace(u32),
+    Tab(u32),
+    SingleAmpersand,
 }
 
 pub type Tokens = Vec<Token>;
@@ -41,7 +44,15 @@ pub fn parse(source: String) -> Result<Tokens, ParseError> {
     while let Some(c) = iter.peek() {
         match c {
             '\n' => {
-                result.push(Token::NewLine);
+                if let Some(last) = result.last_mut() {
+                    if let Token::NewLine(newlines) = *last {
+                        *last = Token::NewLine(newlines + 1);
+                        iter.next();
+                        continue;
+                    }
+                }
+
+                result.push(Token::NewLine(1));
                 iter.next();
             }
             '$' => {
@@ -65,6 +76,27 @@ pub fn parse(source: String) -> Result<Tokens, ParseError> {
                 iter.next();
             }
             ' ' => {
+                if let Some(last) = result.last_mut() {
+                    if let Token::Whitespace(whitespaces) = *last {
+                        *last = Token::Whitespace(whitespaces + 1);
+                        iter.next();
+                        continue;
+                    }
+                }
+
+                result.push(Token::Whitespace(1));
+                iter.next();
+            }
+            '\t' => {
+                if let Some(last) = result.last_mut() {
+                    if let Token::Tab(tabs) = *last {
+                        *last = Token::Tab(tabs + 1);
+                        iter.next();
+                        continue;
+                    }
+                }
+
+                result.push(Token::Tab(1));
                 iter.next();
             }
             '#' => {
@@ -79,20 +111,22 @@ pub fn parse(source: String) -> Result<Tokens, ParseError> {
                     if next == '|' {
                         result.push(Token::Or);
                         iter.next();
-                    } else {
-                        result.push(Token::Pipe)
+                        continue;
                     }
                 }
+                result.push(Token::Pipe);
+                iter.next();
             }
             '&' => {
                 if let Some(next) = iter.next() {
                     if next == '&' {
                         result.push(Token::And);
                         iter.next();
-                    } else {
-                        return Err(ParseError::InvalidCharacter('&'));
+                        continue;
                     }
                 }
+                result.push(Token::SingleAmpersand);
+                iter.next();
             }
             '>' => {
                 result.push(Token::Greater);
