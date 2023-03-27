@@ -10,14 +10,14 @@ pub enum ParseError {
     EmptyEscapeSequence(),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum QuoteType {
     Single,
     Double,
     Backtick,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum Token {
     Word(String),
     NewLine(u32),
